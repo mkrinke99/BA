@@ -1,8 +1,13 @@
 
+#INPUT: bacil_inter.csv file with phyto data
+
+#OUTPUT: data with all three interpolation methods
+#        gaps between samplings
+
 library(lubridate)
 library(dplyr)
 
-setwd("~/Uni/Praktikum/data/stechlin_martin")
+#setwd("~/Uni/Praktikum/data/stechlin_martin")
 
 
 bacil<- read.csv("bacil_inter.csv", sep= ";")
