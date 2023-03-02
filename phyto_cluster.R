@@ -5,10 +5,8 @@ library(dplyr)
 library(dendextend)
 library(tidyr)
 library(ggplot2)
-library(viridis)
-library(hrbrthemes)
 
-setwd("~/Uni/Praktikum/data/stechlin_martin")
+
 phy1<- read.csv("phyto_int.csv", sep= ";")
 phy1$time<- as.POSIXct(phy1$time, tz= "UTC")
 phy<- subset(phy1, month(phy1$time) %in% 1:5)
@@ -17,18 +15,9 @@ st<- read.csv("ba_dataset.csv", sep= ";")
 st$time<- as.POSIXct(st$time, format= "%Y-%m-%d", tz= "UTC")
 
 
+#yearly means absolute and relative biomass
 mean<- aggregate(phy[,c( 2: 8)], list(phy$year), mean, na.rm=T)
 rel<-  aggregate(phy[,c(18:24)], list(phy$year), mean, na.rm=T)
-
-
-
-#samlings
-table(!is.na(phy$bacillariophyta))
-#samplings per year
-table(!is.na(phy$bacillariophyta), year(phy$time))
-
-
-
 
 
 #boxplots yearly biomass vorbereitung
@@ -39,81 +28,6 @@ divnames<- c( "Bacillariophyta", "Chlorophyta", "Chrysophyta",
 
 divcols<- c("chartreuse3", "tan","lightskyblue1", "thistle", 
             "orange", "darkolivegreen2", "grey64")
-
-
-
-#data in long format-----
-phy_y<- aggregate(st[,2:8], list(year(st$time)), mean)
-colnames(phy_y)<- c("year", divnames)
-
-phyorder1<- sort(colSums(phy_y[,2:8]), decreasing = T)
-phyorder<-  rownames(as.data.frame(phyorder1))
-
-
-phy_y_long<- gather(phy_y, species, biomass, Bacillariophyta:Sonstige)
-phy_y_long$species <- factor(phy_y_long$species,
-                             levels = phyorder,
-                             ordered = TRUE)
-
-
-#.--------
-#Boxplot Jahresmittelwerte Biomasse normal und mit log. y-Achse------
-phy_y_long %>%
-  ggplot( aes(x= species, y= biomass, fill= species)) +
-  stat_boxplot(geom = "errorbar", width = 0.4) +
-  geom_boxplot(lwd= 0.75, outlier.size= 2.5, outlier.color= "grey25") +
-  scale_fill_viridis(discrete = TRUE, alpha=0.6) +
-  theme_ipsum() +
-  theme(
-    legend.position="none",
-    plot.title = element_text(size=11)
-  ) +
-  ggtitle("Biomasse (Jahresmittelwerte)") +
-  xlab("Spezies")+
-  ylab(expression("Biomasse [µg L"^ "-1"* "]"))
-
-#y-Achse log
-phy_y_long %>%
-  ggplot( aes(x= species, y= biomass, fill= species)) +
-  stat_boxplot(geom = "errorbar", width = 0.4) +
-  geom_boxplot(lwd= 0.8) +
-  scale_fill_viridis(discrete = TRUE, alpha=0.6) +
-  geom_jitter(color="grey25", size= 1.4, alpha=0.9) +
-  theme_ipsum() +
-  theme(
-    legend.position="none",
-    plot.title = element_text(size=11)
-  ) +
-  ggtitle("Biomasse (Jahresmittelwerte)") +
-  xlab("Spezies")+
-  ylab(expression("Biomasse [µg L"^ "-1"* "]"))+
-  scale_y_continuous(trans='log10')
-
-
-
-
-
-
-#Berechne Mittelwert und Median
-round(apply(phy_y[,-1], 2, FUN= median),2)
-round(apply(phy_y[,-1], 2, FUN= mean),2)
-#Bacil mit größtem Mittelwert und Median
-#Cyano mit zweitgrößtem Mittelwert (etwa halb so groß wie Bacil), jedoch
-#nur Drittgrößter Median da sehr linksschief
-#Allgemein sehr linksschiefe Verteilung durch hohe Werte in den 2010ern
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #dendogram-----
 
@@ -146,7 +60,8 @@ p1<- plot(dend, las= 1)
 
 
 #lines yearly means-----
-ggplot(phy_y, aes(x = year)) +
+colnames(mean)<- c("year", divnames)
+ggplot(mean, aes(x = year)) +
   geom_line(aes(y = Bacillariophyta,  colour = divnames[1]), size= 1.9) +
   geom_line(aes(y = Chlorophyta,      colour = divnames[2]), size= 1.1) +
   geom_line(aes(y = Chrysophyta,      colour = divnames[3]), size= 1.1) +
@@ -160,15 +75,15 @@ ggplot(phy_y, aes(x = year)) +
   theme_bw() 
 
 
-
+colnames(rel)<- c("year", divnames)
 ggplot(rel, aes(x = year)) +
-  geom_line(aes(y = bacil_rel,  colour = divnames[1]), size= 2) +
-  geom_line(aes(y = chloro_rel, colour = divnames[2]), size= 1.1) +
-  geom_line(aes(y = chryso_rel, colour = divnames[3]), size= 1.1) +
-  geom_line(aes(y = crypto_rel, colour = divnames[4]), size= 1.1) +
-  geom_line(aes(y = cyano_rel,  colour = divnames[5]), size= 2) +
-  geom_line(aes(y = dino_rel,   colour = divnames[6]), size= 1.1) +
-  geom_line(aes(y = others_rel,   colour = divnames[7]), size= 1.1) +
+  geom_line(aes(y = Bacillariophyta,  colour = divnames[1]), size= 2) +
+  geom_line(aes(y = Chlorophyta, colour = divnames[2]), size= 1.1) +
+  geom_line(aes(y = Chrysophyta, colour = divnames[3]), size= 1.1) +
+  geom_line(aes(y = Cryptophyta, colour = divnames[4]), size= 1.1) +
+  geom_line(aes(y = Cyanophyta,  colour = divnames[5]), size= 2) +
+  geom_line(aes(y = Dinophyta,   colour = divnames[6]), size= 1.1) +
+  geom_line(aes(y = Sonstige,   colour = divnames[7]), size= 1.1) +
   scale_colour_manual("", breaks = divnames,values = divcols) +
   ylim(0, 1) +
   labs(x = "Jahr", y = "Relative Biomasse [%]", 
@@ -207,6 +122,7 @@ text(55, 1.05*max(relr[,(i+1)]), cex= 0.9,
 text(b1, par("usr")[3], labels = relr$year, srt = 45, 
      adj = c(1.1,1.1), xpd = TRUE, cex= 0.9) 
 }
+
 
 #relr groop means-----
 

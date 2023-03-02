@@ -1,13 +1,14 @@
 
 #INPUT: bacil_inter.csv file with phyto data
 
-#OUTPUT: data with all three interpolation methods
-#        gaps between samplings
+#OUTPUT: plot of data with all three interpolation methods
+#        no Excel files!
 
 library(lubridate)
 library(dplyr)
+library(polynom)
+library(pracma)
 
-#setwd("~/Uni/Praktikum/data/stechlin_martin")
 
 
 bacil<- read.csv("bacil_inter.csv", sep= ";")
@@ -28,8 +29,6 @@ for(yy in 1994:2020){
   }
 
 
-library(polynom)
-library(pracma)
 
 bacil$difftime<- as.numeric(difftime(bacil$time, bacil$time[1], units= "days"))
 
@@ -75,59 +74,6 @@ abline(h=0, col= "grey55")
 }
 
 
-
-#inter<- poly.calc(x[1:20], y[1:20])
-
-
-
-#observations per year +gaps
-
-#create column of gap between two measurements
-obs<- subset(bacil, !is.na(bacil$bacillariophyta))
-lag1<- obs$time[-1]
-lag2<- obs$time[-nrow(obs)]
-obs$gap<- c(0, as.numeric(difftime(lag1, lag2)))
-obs1<- obs[,c(6,9)]
-
-#merge with data set
-bacil<- merge(bacil, obs1, all.x= T, by= "time")
-
-par(mfrow= c(3,9)) 
-#plot years
-for(yy in 1994:2020){
-  obs_y<- subset(obs, year(obs$time) %in% (yy-1):yy & month(obs$time) %in% 1:6)
-  d1<- as.POSIXct(paste0(yy,"-01-01"), tz="UTC")
-  d2<- as.POSIXct(paste0(yy,"-02-01"), tz="UTC")
-  d3<- as.POSIXct(paste0(yy,"-03-01"), tz="UTC")
-  d4<- as.POSIXct(paste0(yy,"-04-01"), tz="UTC")
-  d5<- as.POSIXct(paste0(yy,"-05-01"), tz="UTC")
-  d6<- as.POSIXct(paste0(yy,"-05-31"), tz="UTC")
-  plot(obs_y$time, obs_y$gap,
-       main= yy, cex.main= 1.2, 
-       xlab= "Zeit", ylab= "Tage zwischen Stichproben",
-       lwd= 2.3, col= "dodgerblue3", type= "b", pch= 16, axes= F, cex= 1.2,
-       xlim= c(d1,d6),
-       ylim= c(0, max(60, 1.1*obs[obs$year== yy,]$gap)))
-  axis(1, c(d1,d2,d3,d4,d5,d6), c(month.abb[1:5],""))
-  axis(2, seq(0,90,10), seq(0,90,10), las=1)
-  text(as.POSIXct(paste0(yy,"-04-13"), tz="UTC"), max(60, 1.1*obs[obs$year== yy,]$gap),
-        paste0(length(obs[month(obs$time) %in% 1:5 & obs$year== yy,]$gap),
-               " Stichproben"), col= "dodgerblue4", cex= 1.2)
-  abline(h= c(0,7,14,21,28), lty= 2, col= "grey76")
-}
-
-
-ve<- vector()
-for(yy in 1994:2020){
-  ve[yy-1993]<- length(obs[month(obs$time) %in% 1:5 &
-                             obs$year== yy,]$gap)}
-
-len<-data.frame(1994:2020, ve)
-plot(1994:2020,ve, type= "l")
-
-#mean days between samplings (Jan-May) 2002-2020
-mean(obs$gap[obs$year %in% 2002:2020 & 
-               month(obs$time) %in% 1:5])  #20.13
 
 
 
