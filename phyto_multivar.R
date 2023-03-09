@@ -4,42 +4,13 @@ library(MASS)
 library(olsrr)
 library(tictoc)
 
-setwd("~/Uni/Praktikum/data/stechlin_martin")
+
 phy<- read.csv("bacil_inter.csv", sep= ";")
 phy$date<- as.POSIXct(phy$date, format= "%d.%m.%Y", tz= "UTC")
 
 phy$day_nr<- yday(phy$date)
 
 
-#plot one year
-plotyr<- function(yy1){
-  y1<- yy1
-  d1<- phy$spline_interpol[phy$year== y1]
-  plot(NA, NA, xlim= c(0,366), ylim= c(-150, 1.1*max(d1)), 
-       las= 1, xlab= "day", ylab= "biomass bacil", main= yy1)
-  lines(d1, lwd= 2, col= "chartreuse3")
-  points(phy$bacillariophyta[phy$year== y1], col= "forestgreen",
-         pch= 16, cex= 1.2)
-  abline(h=0)
-}
-for(yy in 1994:2020){plotyr(yy)}
-
-
-#plot biomass for two years yy1 and yy2
-plotyrs<- function(yy1, yy2){
-y1<- yy1
-y2<- yy2
-d1<- phy$spline_interpol_corrected[phy$year== y1]
-d2<- phy$spline_interpol_corrected[phy$year== y2]
-plot(NA, NA, xlim= c(0,366), ylim= c(0, 1.1*max(c(max(d1, d2)))), 
-     las= 1, xlab= "day", ylab= "biomass bacil")
-lines(d1, lwd= 2, col= "orange")
-lines(d2, lwd= 2, col= "chartreuse3")
-legend("topright", legend= c(y1, y2), fill= c("orange", "chartreuse3"), 
-       box.lty=0, inset= .02, cex= 0.8)
-}
-
-plotyrs(2004,2006)
 
 
 #maximum biomass per year
@@ -76,7 +47,7 @@ plot(1994:2020, phymax$over_x, ylim= c(0,200), ylab= "day",
      type= "b", pch= 16, las= 1, main= paste0("first day of biomass over ", x))
 }
 
-#plot all samples
+#plot nach Dekaden--------
 #colors
 ycols<- c("red3", "yellow3", "dodgerblue3")
 phy$ycol<-                           ycols[1]
@@ -88,6 +59,28 @@ plot(phy$day_nr, phy$bacillariophyta,
      pch= 16, cex= 0.8, las= 1, col= phy$ycol)
 legend(300, 10000, legend= c("1994-1999", "2000-2009", "2010-2020"),
        box.lty= 0, fill= ycols, cex= 0.8)
+
+
+phy$Tag<- yday(phy$date)
+phy$Dekade<- "1994-1999"
+phy[phy$year %in% 2000:2009,]$Dekade<- "2000-2009"
+phy[phy$year %in% 2010:2020,]$Dekade<- "2010-2020"
+
+
+
+
+ggplot(phy, aes(x = Tag, y = bacillariophyta, col = Dekade)) +
+  geom_point(pch = 16, cex = 3.3) +
+  labs(x = "Tag", y = "Biomasse", title = "Stichproben nach Tag der Messung") +
+  theme_bw() + 
+  scale_color_manual(values=c("#00665E", "#FF8000", "#00A3E0")) #+
+ # scale_y_continuous(trans='log10')
+
+
+
+
+
+
 
 
 #plot day of maximum and maximum
@@ -345,9 +338,6 @@ for(yy in 1994:i){
 
 
 #verschiebe jährl. plots in y-Richtung
-
-
-
 
 
 

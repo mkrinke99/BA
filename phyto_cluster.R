@@ -59,6 +59,88 @@ par(cex= 0.67, mar= c(9,5,4,1), mfrow= c(1,1))
 p1<- plot(dend, las= 1)
 
 
+#bacil biomass for days-----
+
+
+#baciladd<- data.frame(time= bacil$time[1],
+#                     bacil_int= bacil$bacil_int[1],
+#                      year= 1994, 
+#                      day= c(paste0("01-0", 1:9), paste0("01-", 10:19)))
+#bacil<- rbind(baciladd, bacil)
+#bacil<- bacil[bacil$day!= "02-29",]#
+#bacil_d<-reshape(bacil[,-1], idvar = "year", 
+#                 timevar = "day", direction = "wide")
+#dend
+#x <- decostand(bacil_d[,-1], "normalize")
+#dend <- as.dendrogram(hclust(dist(x), method= "complete"))
+#labels(dend) <- bacil_d$year[order.dendrogram(dend)]
+#dend <- dend %>%
+#  color_labels(k =  4) %>%
+#  color_branches(k= 4) %>%
+#  set("branches_lwd", 2)
+#par(mfrow= c(1,1), mar= c(7,5,5,4))
+#p1<- plot(dend, las= 1)
+
+#reshape to compare days
+bacil<- phy[,1:2]
+bacil$year<- year(bacil$time)
+bacil$date<-format(bacil$time, format= "%m-%d")
+bacil$day<- yday(bacil$time)
+
+
+
+
+
+bacil$diff<- c(1,diff(bacil$bacil_int))
+bacil$growth<- bacil$diff/bacil$bacil_int
+
+
+
+
+bacil_y<- aggregate(bacil$bacil_int, list(bacil$year), max)
+bacil_y$maxday<- 0
+for(i in 1:27){
+bacil_y$maxday[i]<- bacil[bacil$year== i+1993 &
+                          bacil$bacil_int== bacil_y[i,2],]$day
+}
+
+
+
+x <- decostand(bacil_y[,-1], "normalize")
+dend <- as.dendrogram(hclust(dist(x), method= "complete"))
+labels(dend) <- bacil_y[,1][order.dendrogram(dend)]
+
+dend <- dend %>%
+  color_labels(k =  4) %>%
+  color_branches(k= 4) %>%
+  set("branches_lwd", 2)
+
+par(mfrow= c(1,1), mar= c(7,5,5,4))
+p1<- plot(dend, las= 1)
+
+
+
+#monthly means
+bacil$month<- month(bacil$time)
+bacil_m<- aggregate(bacil$bacil_int, list(bacil$year, bacil$month), mean)
+colnames(bacil_m)<- c("year", "month", "biomass")
+
+mon_wide<- reshape(bacil_m, idvar = "year", timevar = "month", direction = "wide")
+x <- decostand(mon_wide[,-1], "normalize")
+dend <- as.dendrogram(hclust(dist(x), method= "complete"))
+labels(dend) <- mon_wide[,1][order.dendrogram(dend)]
+
+dend <- dend %>%
+  color_labels(k =  4) %>%
+  color_branches(k= 4) %>%
+  set("branches_lwd", 2)
+
+par(mfrow= c(1,1), mar= c(7,5,5,4))
+p1<- plot(dend, las= 1)
+
+
+
+
 #lines yearly means-----
 colnames(mean)<- c("year", divnames)
 ggplot(mean, aes(x = year)) +
