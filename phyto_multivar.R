@@ -3,7 +3,7 @@ library(lubridate)
 library(MASS)
 library(olsrr)
 library(tictoc)
-
+library(ggplot2)
 
 phy<- read.csv("bacil_inter.csv", sep= ";")
 phy$date<- as.POSIXct(phy$date, format= "%d.%m.%Y", tz= "UTC")
@@ -62,18 +62,21 @@ legend(300, 10000, legend= c("1994-1999", "2000-2009", "2010-2020"),
 
 
 phy$Tag<- yday(phy$date)
-phy$Dekade<- "1994-1999"
-phy[phy$year %in% 2000:2009,]$Dekade<- "2000-2009"
-phy[phy$year %in% 2010:2020,]$Dekade<- "2010-2020"
+phy$Zeitraum<- "1994-1999"
+phy[phy$year %in% 2000:2009,]$Zeitraum<- "2000-2009"
+phy[phy$year %in% 2010:2020,]$Zeitraum<- "2010-2020"
 
 
 
+month1<- c(unique(phy[day(phy$date)==1,]$Tag)[1:12], 365)
 
-ggplot(phy, aes(x = Tag, y = bacillariophyta, col = Dekade)) +
+ggplot(phy, aes(x = Tag, y = bacillariophyta, col = Zeitraum)) +
   geom_point(pch = 16, cex = 3.3) +
-  labs(x = "Tag", y = "Biomasse", title = "Stichproben nach Tag der Messung") +
+  labs(x = "Datum", y = expression("Biomasse [µg L"^ "-1"* "]"),
+       title = "Stichproben nach Datum") +
   theme_bw() + 
-  scale_color_manual(values=c("#00665E", "#FF8000", "#00A3E0")) #+
+  scale_color_manual(values=c("#00665E", "#FF8000", "#00A3E0"))+
+  scale_x_continuous(breaks= month1, labels = c(month.abb, "Jan")) #+
  # scale_y_continuous(trans='log10')
 
 

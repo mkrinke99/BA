@@ -2,14 +2,15 @@
 
 library(lubridate)
 library(dplyr)
-
+library(ggplot2)
 
 phy1<- read.csv("phyto_int.csv", sep= ";")
 phy1$time<- as.POSIXct(phy1$time, tz= "UTC")
 phy<- subset(phy1, month(phy1$time) %in% 1:5)
 
-st<- read.csv("ba_dataset.csv", sep= ";")
-st$time<- as.POSIXct(st$time, format= "%Y-%m-%d", tz= "UTC")
+st12<- read.csv("ba_dataset.csv", sep= ";")
+st12$time<- as.POSIXct(st12$time, format= "%Y-%m-%d", tz= "UTC")
+st<- st[month(st12$time) %in% 1:5,]
 
 #Spezies
 spe1<- read.csv("newphyto.csv", sep= ";")
@@ -20,6 +21,14 @@ spe<- spe[spe$species!= "Centrales",]
 
 specmean<- aggregate(spe$biomass, list(spe$species), mean, n.rm=T)
 specmean$rel<- round(specmean[,2]/sum(specmean[,2]),5)
+colnames(specmean)<- c("species", "biomass", "biomass_rel")
+
+spe6<- specmean[specmean$species %in% c("Asterionella.formosa",
+                                        "Diatoma.elongatum",
+                                        "Synedra.spp.",
+                                        "Fragilaria.crotonensis"),]
+
+
 
 #monthly means
 bac<- cbind(phy[,c("time", "bacil_int","bacil_rel")], st[,c("PAR","strat")])
@@ -47,7 +56,7 @@ for(i in 1:5){
                " (", month.abb[i], ")"))}
 
 
-#4 vars maximum, time of maximum, PAR and strat begin
+#4 vars maximum, time of maximum, PAR and strat begin------
 bacil4v<- data.frame(year<- 1994:2020,
                      max=  aggregate(bac$bacil_int, list(year(bac$time)), max)[,2],
                      maxday=  aggregate(bac$bacil_int, list(year(bac$time)), which.max)[,2],
@@ -61,18 +70,74 @@ panel.cor <- function(x, y, digits = 3, prefix = "", cex.cor, ...) {
   usr <- par("usr")
   on.exit(par(usr))
   par(usr = c(0, 1, 0, 1))
-  Cor <- cor(x, y) # Remove abs function if desired
+  Cor <- cor(x, y) 
   txt <- paste0(prefix, format(c(Cor, 0.123456789), digits = digits)[1])
   if(missing(cex.cor)) {
     cex.cor <- 0.4 / strwidth(txt)
   }
   text(0.5, 0.5, txt,
-       cex = 1 + cex.cor * abs(Cor)) # Resize the text by level of correlation
+       cex = 1 + cex.cor * abs(Cor)) 
 }
-# Plotting the correlation matrix
+
+
+# Plotting the correlation matrix----
 pairs(bacil4v[,2:5], pch= 16, col= "grey16", lwd= 2,
       upper.panel = panel.cor,    # Correlation panel
       lower.panel = panel.smooth) 
+
+#rank correl------
+bacil4vrank<- data.frame(year= 1994:2020,  
+                            max_rank= rank(bacil4v$max),
+                            maxday_rank= rank(bacil4v$maxday),
+                            strat_rank= rank(bacil4v$strat),
+                            PAR_rank=rank(bacil4v$PAR))
+
+pairs(bacil4vrank[,2:5], pch= 16, col= "grey16", lwd= 2,
+      upper.panel = panel.cor,    # Correlation panel
+      lower.panel = panel.smooth) 
+
+
+#function cor unterschiedliche monate, rank or no rank-----
+cor4<- function(months, userank){
+  bacm<- bac[month(bac$time) %in% months,]
+  df<- data.frame(year<- 1994:2020,
+            max=     aggregate(bacm$bacil_int, list(year(bacm$time)), max)[,2],
+            maxday=  aggregate(bac$bacil_int, list(year(bac$time)), which.max)[,2],
+            strat=   c(yday(bac[bac$strat - lag(bac$strat) ==1,][-1,]$time),150),
+            PAR=     aggregate(bacm$PAR, list(year(bacm$time)), mean)[,2]
+  )
+  df$PAR[1:4]<- mean(df$PAR, na.rm=T)
+  if(userank== T){
+    df[,2]<- rank(df[,2])
+    df[,3]<- rank(df[,3])
+    df[,4]<- rank(df[,4])
+    df[,5]<- rank(df[,5])
+  }
+  pairs(df[,2:5], pch= 16, col= "grey16", lwd= 2,
+        upper.panel = panel.cor,    # Correlation panel
+        lower.panel = panel.smooth,
+        main= "")  
+  colnames(df)[1]<- "year"
+  return(df)
+}
+
+df<- cor4(1:5, F)
+
+#time difference between maximum day and strat begin
+df$maxday_strat<- df$maxday - df$strat
+
+ggplot(df, aes(x= year, y= maxday_strat))+
+  geom_line(lwd= 2, col= "royalblue")  +
+  geom_hline(yintercept= 0, linetype="dashed")  +
+  labs(x = "Jahr", y = expression("Tage"), 
+       title = "Abstand zwischen Kieselalgen Maximum und Wasserzirkulation [Tage]") +
+  theme_bw() 
+  
+
+
+
+
+
 
 
 #dendogram---------
@@ -87,4 +152,35 @@ dend <- dend %>%
 
 par(cex= 0.67, mar= c(9,5,4,1), mfrow= c(1,1))
 p1<- plot(dend, las= 1)
+
+
+
+library("hydroTSM")
+st12$season<- time2season(st12$time, out.fmt = "seasons")
+
+aglong<- aggregate(st12$all, list(year(st12$time), st12$season), mean)
+ag<- reshape(aglong, timevar= "Group.2", idvar = "Group.1", direction = "wide")
+colnames(ag)<- c("year","autumn","spring","summer","winter")
+ag<- ag[,c("year", "winter", "spring", "summer", "autumn")]
+
+
+
+pairs(ag[,-1], pch= 16, col= "grey16", lwd= 2,
+      upper.panel = panel.cor,    
+      lower.panel = panel.smooth) 
+
+#ranks
+agr<- data.frame(year= 1994:2020,
+                    winter_rank= rank(ag[,2]),
+                    spring_rank= rank(ag[,3]),
+                    summer_rank= rank(ag[,4]),
+                    autumn_rank= rank(ag[,5]))
+
+pairs(agr[,-1], pch= 16, col= "grey16", lwd= 2,
+      upper.panel = panel.cor,    
+      lower.panel = panel.smooth) 
+
+
+
+
 

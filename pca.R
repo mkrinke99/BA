@@ -114,7 +114,24 @@ phy_y_long$species <- factor(phy_y_long$species,
                             ordered = TRUE)
 
 
-#Boxplot Jahresmittelwerte mit log. y-Achse------
+#Boxplot Jahresmittelwerte ------
+phy_y_long %>%
+  ggplot( aes(x= species, y= biomass, fill= species)) +
+  stat_boxplot(geom = "errorbar", width = 0.4) +
+  geom_boxplot(lwd= 0.75, outlier.size= 2.5, outlier.color= "grey25") +
+  scale_fill_viridis(discrete = TRUE, alpha=0.6) +
+  theme_ipsum() +
+  theme(
+    legend.position="none",
+    plot.title = element_text(size=11)
+  ) +
+  ggtitle("Biomasse (Jahresmittelwerte)") +
+  xlab("Spezies")+
+  ylab(expression("Biomasse [µg L"^ "-1"* "]"))
+
+
+
+#mit log. y-Achse---------
 phy_y_long %>%
 ggplot( aes(x= species, y= biomass, fill= species)) +
   geom_boxplot() +

@@ -320,26 +320,6 @@ print(paste0("Kruskal-Wallis Test ", colnames(ymeans)[i],
 
 
 
-#plot all biomasses in one------
-ggplot(phy_y_long, aes(x = year, y = biomass)) +
-  geom_area(aes(color = species, fill = species, alpha= 0.3))+
-  labs(x = "Jahr", y = expression("Biomasse [µg L"^ "-1"* "]"), 
-       title = "Biomasse (Durchschnittswerte Januar-Mai)") +
-  theme_bw() 
-
-
-
-par(mfrow= c(3,9))
-for(yy in 1994:2020){
-  py<- subset(phy, year(phy$time)== yy)
-  ymax= 4000
-  if(yy %in% 2017:2019){ymax= 11000}
-  plot(py$time, py$bacil_int, type= "l", col= "chartreuse3", lwd= 2,
-       las= 1, ylim= c(0,ymax), cex.axis= 0.9,
-       xlab= "", ylab= "", main= yy)
-}
-
-
 
 
 
