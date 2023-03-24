@@ -2,49 +2,29 @@
 library(dplyr)
 library(lubridate)
 library(trend)
+library(ggplot2)
 
-setwd("~/Uni/Praktikum/data/stechlin_martin")
+st<- read.csv("st_s.csv", sep= ";")
 
-st<- read.csv("ba_dataset.csv", sep= ";")
-st$time<- as.POSIXct(st$time, tz= "UTC")
-#add months
-st$month<- paste0(year(st$time), "-0", month(st$time))
 #change PAR values
 
 
 
-
-
-#physchemmet-------
-
-#aggregate yearly means
-stagg<- st[,c(1:30, 32:41)]
-stmean<- aggregate(stagg[,-1], list(year(stagg$time)), mean, na.rm=T)
-colnames(stmean)[1]<- "year"
-stmean$PAR[1:3]<- 216
-
 #aggregate monthly means
-st01<- subset(stagg, month(stagg$time)== 1)
-st02<- subset(stagg, month(stagg$time)== 2)
-st03<- subset(stagg, month(stagg$time)== 3)
-st04<- subset(stagg, month(stagg$time)== 4)
-st05<- subset(stagg, month(stagg$time)== 5)
-
-mean01<- aggregate(st01[,2:33], list(year(st01$time)), mean, na.rm=T)
-mean02<- aggregate(st02[,2:33], list(year(st02$time)), mean, na.rm=T)
-mean03<- aggregate(st03[,2:33], list(year(st03$time)), mean, na.rm=T)
-mean04<- aggregate(st04[,2:33], list(year(st04$time)), mean, na.rm=T)
-mean05<- aggregate(st05[,2:33], list(year(st05$time)), mean, na.rm=T)
-
+stwinter<- subset(st, st$season== "winter")
+stspring<- subset(st, st$season== "spring")
+stsummer<- subset(st, st$season== "summer")
+stautumn<- subset(st, st$season== "autumn")
+stall<-    aggregate(st[,-c(1:2)], list(st$year), mean, na.rm= T)
 
 
 #plots yearly averages physchemmet------
-ynames<- c("", rep(expression("Biomasse [µg L"^ "-1"* "]"), 8),
+ynames<- c("", "", rep(expression("Biomasse [µg L"^ "-1"* "]"), 8),
            rep("Relative Biomasse [%]", 7), "", "Wassertemperatur [°C]",
            expression("Konzentration [mg L"^ "-1"* "]"), "pH",
            rep(expression("Konzentration [mg L"^ "-1"* "]"), 7),
            expression("PAR µmol m"^"-2"*"s"^"-1"), "m","m")
-mainnames<- c("", "Bacillariophyta", "Chlorophyta", "Chrysophyta",
+mainnames<- c("", "", "Bacillariophyta", "Chlorophyta", "Chrysophyta",
               "Cryptophyta", "Cyanophyta", "Dinophyta", "Sonstige",
               "Biomasse Gesamt", "Relative Biomasse \n Bacillariophyta",
               "Relative Biomasse \n Chlorophyta", "Relative Biomasse \n Chtysophyta",
@@ -61,20 +41,28 @@ mainnames<- c("", "Bacillariophyta", "Chlorophyta", "Chrysophyta",
               "PAR",
               "Mixed Layer Tiefe")
 
+years<- 1994:2020
 
-mkplot<- function(vari){
-  years<- 1994:2020
-  pvalres<- data.frame(var= colnames(stmean[,vari]), p.value_L= 0, p.value_R=0)
+
+mkplot<- function(vari, showplot, seasn){
+  pvalres<- data.frame(var= colnames(st)[vari], p.value_L= 0, p.value_R=0)
   resvec<- vector()
+  st_s<- subset(st, st$season== seasn)
+  if(seasn== "all"){
+    st_s<- stall
+    st_s<- st_s[c(1,1, 2:ncol(st_s))]
+    }
   for(i in vari){
-    
-    
-  var<- stmean[,i]
+    i1<- min(vari)
+  var<- st_s[,i]
   mid<- 2007
-  if(colnames(stmean)[i]== "PAR") {
-    years<- 1998:2020
-    var<-   var[5:27]
-    mid<-   2009}
+  if(colnames(st_s)[i]== "PAR") {
+    var2<-   var[5:27]
+    mid<-   2009
+    pvalr<- round(mk.test(var2, alternative = "greater")$p.value,5)
+    pvall<- round(mk.test(var2, alternative = "less")$p.value,5)
+    pval<-  min(pvall, pvalr)
+    }
   pvalr<- round(mk.test(var, alternative = "greater")$p.value,5)
   pvall<- round(mk.test(var, alternative = "less")$p.value,5)
   pval<-  min(pvall, pvalr)
@@ -83,8 +71,8 @@ mkplot<- function(vari){
   if(pvalr <  0.01) {result=  " **"}
   if(pvalr < 0.001) {result= " ***"}
 df<- data.frame(years= years, var= var)
-  
-ggplot(df, aes(x= years, y= var)) +
+#plot
+p1<-ggplot(df, aes(x= years, y= var)) +
   geom_line(color = "chartreuse3", size = 1) +
   geom_point(color = "chartreuse3", size = 3, shape = 16) +
   labs(x = "Jahr", y = ynames[i],
@@ -94,18 +82,66 @@ ggplot(df, aes(x= years, y= var)) +
         plot.title = element_text(size = 12, face = "bold")) +
   ylim(min(var), max(var) + 0.08 * diff(range(var))) +
   annotate("text", x = median(df$years), y = max(var) + 0.05 * diff(range(var)), 
-           label = paste0("p-Wert MK-Test: ", pval, result))
-
-
-pvalres[(i-1),2]<- pvall
-pvalres[(i-1),3]<- pvalr
+           label = paste0("p-Wert MK-Test_s: ", pval, result))
+pvalres[(i-(i1-1)),2]<- pvall
+pvalres[(i-(i1-1)),3]<- pvalr
+if(showplot== T) {return(p1)}
   }
-  return(pvalres)
+  if(showplot== F)return(pvalres)
 }
 
-mk<- mkplot(c(2:29))
-mk
-write.csv(mk, file= "MKtest.csv", sep= ";")
+
+
+mkwinter<- mkplot(3:31, F, "winter")
+mkwinter$season<- "winter"
+
+mkspring<- mkplot(3:31, F, "spring")
+mkspring$season<- "spring"
+
+mksummer<- mkplot(3:31, F, "summer")
+mksummer$season<- "summer"
+
+mkautumn<- mkplot(3:31, F, "autumn")
+mkautumn$season<- "autumn"
+
+mkall<- mkplot(3:31, F, "all")
+mkall$season<- "all"
+
+mktests<- cbind(mkwinter, mkspring, mksummer, mkwinter, mkall)
+
+
+#save test results
+library("xlsx")
+#write.xlsx(mktests, file= "MKtest.xlsx", col.names= T)
+
+
+
+#mk-test bacil without 2020-----
+#winter
+mk.test(stwinter$bacil_int[1:26], alternative = "greater")$p.value #0.0858
+#spring
+mk.test(stspring$bacil_int[1:26], alternative = "greater")$p.value #0.0236
+#summer
+mk.test(stsummer$bacil_int[1:26], alternative = "greater")$p.value #0.0614
+#autumn
+mk.test(stautumn$bacil_int[1:26], alternative = "greater")$p.value #0.0122
+#all seasons
+mk.test(stall$bacil_int[1:26], alternative= "greater")$p.value #0.0041
+
+
+
+
+
+#plot significant trends-------
+
+ggplot(stwinter, aes(x= 1994:2020, y= tp)) +
+  geom_line(color= "dodgerblue3") +
+  geom_point(col= "dodgerblue4") +
+  geom_line(aes(x= 1994:2020, y= no3)) +
+  theme_light()
+
+
+
 
 #significant trends:
 #srp:    0.00001 *** increase
@@ -232,6 +268,59 @@ for(i in  c(2:16)){
 #crypto-rel: decrease in Jan-Mar (p-val < 0.025 for all)
 #cyano-rel:  increase for all months, Jan and May (***)
 #dino-rel:   increase in april and may (p-val < 0.011 for both)
+
+
+
+
+
+#bacil season means per year
+plot(years, stwinter$bacil_int, type= "b", pch= 19, lwd= 2, col= "cyan3")
+lines(years, stspring$bacil_int, type= "b", pch= 19, lwd= 2, col= "chartreuse3")
+lines(years, stsummer$bacil_int, type= "b", pch= 19, lwd= 2, col= "gold")
+lines(years, stautumn$bacil_int, type= "b", pch= 19, lwd= 2, col= "tomato1")
+
+
+
+plot(years, stwinter$bacil_int, type= "b", pch= 19, lwd= 2, col= "cyan3",
+     ylim= c(0, 4600), las= 1)
+lines(years, stsummer$all, type= "b", col= "red2", lwd=2, pch=19)
+
+
+#ts decompose-----------
+
+library(forecast)
+
+st12<- read.csv("ba_dataset.csv", sep= ";")
+st12$time<- as.POSIXct(st12$time, format= "%Y-%m-%d", tz= "UTC")
+
+tsp = ts(st12$bacil_int, frequency = 365)
+decom<- decompose(tsp, "additive")
+
+plot(st12$time, st12$bacil_int - decom$trend, type= "l", col= "royalblue")
+
+
+
+
+
+
+#correl Biomassen ~ physchem ------
+
+panel.cor <- function(x, y, digits = 3, prefix = "", cex.cor, ...) {
+  usr <- par("usr")
+  on.exit(par(usr))
+  par(usr = c(0, 1, 0, 1))
+  Cor <- cor(x, y) 
+  txt <- paste0(prefix, format(c(Cor, 0.123456789), digits = digits)[1])
+  if(missing(cex.cor)) {
+    cex.cor <- 0.4 / strwidth(txt)
+  }
+  text(0.5, 0.5, txt,
+       cex = 1 + cex.cor * abs(Cor)) 
+}
+
+# Plotting the correlation matrix----
+round(cor(stwinter[,c(3,11,18,10)], stwinter[,19:31]),4)
+
 
 
 

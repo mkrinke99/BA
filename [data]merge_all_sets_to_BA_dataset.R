@@ -104,16 +104,43 @@ st[is.na(st$hmix),]$hmix= 69
 #save------
 #write.table(st, "ba_dataset.csv", sep= ";")
 
+st$year<-   year(st$time)
+st$month<-  month(st$time)
+
+yday(as.Date("03-20", format= "%m-%d")) #spring start: 79
+yday(as.Date("06-21", format= "%m-%d")) #spring start: 172
+yday(as.Date("09-23", format= "%m-%d")) #autumn start: 266
+yday(as.Date("12-22", format= "%m-%d")) #autumn start: 356
+
+st$season<- "winter"
+st[yday(st$time) %in% 79:171,]$season<- "spring"
+st[yday(st$time) %in% 172:265,]$season<- "summer"
+st[yday(st$time) %in% 266:355,]$season<- "autumn"
+
+#change year of data from 22.12. - 31.12.  -> aggregate for winter of next year
+st$year2<- st$year
+st[yday(st$time) > 355,]$year2<- st[yday(st$time) > 355,]$year+1
 
 
 
+#yearly means
+st_y<- aggregate(st[,2:41], list(st$year), mean, na.rm= T)
+colnames(st_y)[1]<- "year"
+#save
+#write.table(st_y, "st_y.csv", sep= ";")
+
+#monthly means
+st_m<- aggregate(st[,2:41], list(st$year, st$month), mean, na.rm= T)
+colnames(st_m)[1:2]<- c("year", "month")
+#save
+#write.table(st_m, "st_m.csv", sep= ";")
 
 
-
-
-
-
-
+#season means
+st_s<- aggregate(st[,2:41], list(st$year2, st$season), mean, na.rm= T)
+colnames(st_s)[1:2]<- c("year", "season")
+#save
+#write.table(st_s, "st_s.csv", sep= ";")
 
 
 

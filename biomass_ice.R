@@ -14,7 +14,7 @@ st<- subset(st, st$month %in% 1:5)
 
 
   
-for (yy in 1994:1995){
+for (yy in c(1994:2002, 2010:2019)){
   sty<- subset(st, st$year== yy)
   #icecover prediction
   #transform icecover to have it as third axis in time~biomass~icecover plot

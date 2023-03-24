@@ -56,7 +56,40 @@ dend <- dend %>%
   set("branches_lwd", 2)
 
 par(cex= 0.67, mar= c(9,5,4,1), mfrow= c(1,1))
-p1<- plot(dend, las= 1)
+p1<- plot(dend, las= 1, 
+          main= "Dendogram relative Biomassen (Januar-Mai)",
+          sub= "Methode: complete linkage")
+
+
+#barplot means per species-----
+relr<- cbind(year= rel[,1], round(rel[,2:8], 3))
+relr<- relr[order.dendrogram(dend),]
+relr$group<- c(rep(1,3), rep(2,8), rep(3,8), rep(4,8))
+relr$groupcol<- c(rep("navy",3), rep("royalblue",8),
+                  rep("forestgreen",8), rep("lightgreen",8))
+
+
+sort(round(colMeans(rel[,2:8]), 3))
+
+par(mfrow= c(2,4))
+for(i in c(1,5,4,3,6,2,7)){
+  b1<- barplot(relr[,(i+1)], ylim= c(0, 1.15*max(relr[,(i+1)])), 
+               space= c(1,1,1, 3, 1,1,1,1,1,1,1, 3, 1,1,1,1,1,1,1, 3, 1,1,1,1,1,1,1),
+               col= relr$groupcol, las= 1, main= divnames[i], cex.main= 1.8)
+  abline(v= c(7.5,25.5, 43.5), lty= 2, col= "grey33")
+  text(55, 1.05*max(relr[,(i+1)]), cex= 1.1,
+       paste0("mean: ", round(mean(relr[,(i+1)]), 4)))
+  text(b1, par("usr")[3], labels = relr$year, srt = 45, 
+       adj = c(1.1,1.1), xpd = TRUE, cex= 0.86) 
+}
+plot(0,0, axes= F, xlab= "", ylab= "", col= "white")
+legend("top", legend= c("Gruppe 1", "Gruppe 2", "Gruppe 3", "Gruppe 4"),
+       fill= unique(relr$groupcol), box.lty=0, cex= 1.8)
+
+
+
+
+
 
 
 #bacil biomass for days-----
@@ -119,7 +152,7 @@ par(mfrow= c(1,1), mar= c(7,5,5,4))
 p1<- plot(dend, las= 1)
 
 
-
+#.------
 #monthly means
 bacil$month<- month(bacil$time)
 bacil_m<- aggregate(bacil$bacil_int, list(bacil$year, bacil$month), mean)
@@ -177,42 +210,12 @@ ggplot(rel, aes(x = year)) +
 
 
 
-
-
-
-
-
-
-
-
-relr<- cbind(year= rel[,1], round(rel[,2:8], 3))
-relr<- relr[order.dendrogram(dend),]
-relr$group<- c(rep(1,3), rep(2,8), rep(3,8), rep(4,8))
-relr$groupcol<- c(rep("navy",3), rep("royalblue",8),
-                  rep("forestgreen",8), rep("lightgreen",8))
-
-#barplot means per species-----
-sort(round(colMeans(rel[,2:8]), 3))
-par(mfrow= c(2,4))
-for(i in c(1,5,4,3,6,2,7)){
-b1<- barplot(relr[,(i+1)], ylim= c(0, 1.15*max(relr[,(i+1)])), 
-        space= c(1,1,1, 3, 1,1,1,1,1,1,1, 3, 1,1,1,1,1,1,1, 3, 1,1,1,1,1,1,1),
-     col= relr$groupcol, las= 1, main= divnames[i])
-abline(v= c(7.5,25.5, 43.5), lty= 2, col= "grey33")
-text(55, 1.05*max(relr[,(i+1)]), cex= 0.9,
-     paste0("mean: ", round(mean(relr[,(i+1)]), 4)))
-text(b1, par("usr")[3], labels = relr$year, srt = 45, 
-     adj = c(1.1,1.1), xpd = TRUE, cex= 0.9) 
-}
-
-
+#.-----
 #relr groop means-----
 
 relmeans<- aggregate(relr[,2:8], list(relr$group), mean)
-relmeans<- rbind(colMeans(relmeans[1:4,]), relmeans)
-relmeans[1,1]<- "mean"
-relmeans[2:5,1]<- paste("group", relmeans[2:5,1])
-colnames(relmeans)[1]<- "group"
+relmeans<- rbind(colMeans(rel[,2:8]), relmeans[,-1])
+relmeans$group<- c("mean", "group1", "group2", "group3", "group4")
 relmeans$groupcol<- c("darkorchid4", unique(relr$groupcol))
 
 par(mfrow= c(2,4))
@@ -223,7 +226,40 @@ for(i in c(1,5,4,3,6,2,7)){
        adj = c(1.1,1.8), xpd = TRUE, cex= 0.9) 
 }
 
+#save table of group means------
+df113<- cbind(relmeans[,8], round(relmeans[,1:7], 3))
+#write.table(df113, "groupmeans_relbiomass.csv", sep= ";")
 
+
+
+relr34<- subset(relr, relr$group %in% 3:4)
+#Correlation of Crypto and Cyano for years in Group 3 and Group 4: -0.636
+cor(relr34$crypto_rel, relr34$cyano_rel)
+#plot
+ggplot(relr34, aes(x= cyano_rel, y= crypto_rel, color= groupcol))+
+  geom_point(size= 4.7, color= relr34$groupcol) +
+  xlim(0, 0.5)+
+  ylim(0, 0.4)+
+  labs(x= "Relative Biomasse Cyanophyta [%]",
+       y= "Relative Biomasse Cryptophyta [%]",
+       title= "Relativen Biomassen Cyanophyta und Cryptophyta (Gruppe 3 und Gruppe 4)")+
+  
+  theme_light()
+
+
+
+
+#Correlation for Bacil and Crypto: -0.729
+cor(relr$bacil_rel, relr$cyano_rel)
+ggplot(relr, aes(x= bacil_rel, y= cyano_rel, color= groupcol))+
+  geom_point(size= 4.7, color= relr$groupcol) +
+  xlim(0, 0.8)+
+  ylim(0, 1)+
+  labs(x= "Relative Biomasse Bacillariophyta [%]",
+       y= "Relative Biomasse Cyanophyta [%]", color= relr$group,
+       title= "Relativen Biomassen Bacillariophyta und Cyanophyta")+
+  
+  theme_light()
 
 
 

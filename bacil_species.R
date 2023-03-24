@@ -23,6 +23,11 @@ specmean<- aggregate(spe$biomass, list(spe$species), mean, n.rm=T)
 specmean$rel<- round(specmean[,2]/sum(specmean[,2]),5)
 colnames(specmean)<- c("species", "biomass", "biomass_rel")
 
+
+
+
+
+
 spe6<- specmean[specmean$species %in% c("Asterionella.formosa",
                                         "Diatoma.elongatum",
                                         "Synedra.spp.",
@@ -31,7 +36,7 @@ spe6<- specmean[specmean$species %in% c("Asterionella.formosa",
 
 
 #monthly means
-bac<- cbind(phy[,c("time", "bacil_int","bacil_rel")], st[,c("PAR","strat")])
+bac<- cbind(phy[,c("time", "bacil_int","bacil_rel")], st[,c("strat")])
 
 bac_m<- aggregate(bac[,c("bacil_int","PAR")], 
                   list(year(bac$time), month(bac$time)), mean, na.rm=T)
@@ -56,6 +61,7 @@ for(i in 1:5){
                " (", month.abb[i], ")"))}
 
 
+#bacil4
 #4 vars maximum, time of maximum, PAR and strat begin------
 bacil4v<- data.frame(year<- 1994:2020,
                      max=  aggregate(bac$bacil_int, list(year(bac$time)), max)[,2],
@@ -81,7 +87,7 @@ panel.cor <- function(x, y, digits = 3, prefix = "", cex.cor, ...) {
 
 
 # Plotting the correlation matrix----
-pairs(bacil4v[,2:5], pch= 16, col= "grey16", lwd= 2,
+pairs(bacil4v[,2:6], pch= 16, col= "grey16", lwd= 2,
       upper.panel = panel.cor,    # Correlation panel
       lower.panel = panel.smooth) 
 
@@ -123,6 +129,7 @@ cor4<- function(months, userank){
 
 df<- cor4(1:5, F)
 
+
 #time difference between maximum day and strat begin
 df$maxday_strat<- df$maxday - df$strat
 
@@ -162,9 +169,23 @@ aglong<- aggregate(st12$all, list(year(st12$time), st12$season), mean)
 ag<- reshape(aglong, timevar= "Group.2", idvar = "Group.1", direction = "wide")
 colnames(ag)<- c("year","autumn","spring","summer","winter")
 ag<- ag[,c("year", "winter", "spring", "summer", "autumn")]
+ag$secchi<- aggregate(st12$secchi, list(year(st12$time)), mean)$x
+
+#apply same method with winter biomass bacil 
+# andtotal biomass in summer
+
+#winter diatoms vs summer cyano
+
+#detrend data -> decompose, divide trend component
+
+#nutrients tp!, (si), no3, (tn)
 
 
 
+
+
+
+#without rank
 pairs(ag[,-1], pch= 16, col= "grey16", lwd= 2,
       upper.panel = panel.cor,    
       lower.panel = panel.smooth) 
@@ -174,11 +195,18 @@ agr<- data.frame(year= 1994:2020,
                     winter_rank= rank(ag[,2]),
                     spring_rank= rank(ag[,3]),
                     summer_rank= rank(ag[,4]),
-                    autumn_rank= rank(ag[,5]))
+                    autumn_rank= rank(ag[,5]),
+                    secchi_rank= rank(ag[,6]))
 
 pairs(agr[,-1], pch= 16, col= "grey16", lwd= 2,
       upper.panel = panel.cor,    
       lower.panel = panel.smooth) 
+
+decompose(st12$bacil_int)
+ 
+
+
+library(forecast)
 
 
 
