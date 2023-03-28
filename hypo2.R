@@ -5,11 +5,14 @@
 
 #Benötigte Daten: Bacil. Biomasse, PAR(mol m^-2 d^-1), strat)
 
+#Aufgaben: plotte Bacil_Biomasse oder Wachstumsrate zusammen mit
+#          PAR und Stratification Beginn
 
+
+#Benötigte Pakete und Funtionen
 library(dplyr)
 library(lubridate)
 library(ggplot2)
-
 
 #MAF-----------
 modulo<-function(x,a){		# gibt den Rest der Division x/a zurück

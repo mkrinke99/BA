@@ -231,37 +231,34 @@ df113<- cbind(relmeans[,8], round(relmeans[,1:7], 3))
 #write.table(df113, "groupmeans_relbiomass.csv", sep= ";")
 
 
-
+#plots correl----
 relr34<- subset(relr, relr$group %in% 3:4)
 #Correlation of Crypto and Cyano for years in Group 3 and Group 4: -0.636
 cor(relr34$crypto_rel, relr34$cyano_rel)
 #plot
-ggplot(relr34, aes(x= cyano_rel, y= crypto_rel, color= groupcol))+
-  geom_point(size= 4.7, color= relr34$groupcol) +
+ggplot(relr34, aes(x= cyano_rel, y= crypto_rel))+
+  geom_point(aes(colour= factor(group)),size= 4.7) +
+  scale_colour_manual(values = unique(relr34$groupcol))  +
   xlim(0, 0.5)+
   ylim(0, 0.4)+
-  labs(x= "Relative Biomasse Cyanophyta [%]",
+  labs(color= "Gruppe",
+       x= "Relative Biomasse Cyanophyta [%]",
        y= "Relative Biomasse Cryptophyta [%]",
-       title= "Relativen Biomassen Cyanophyta und Cryptophyta (Gruppe 3 und Gruppe 4)")+
-  
+       title= "Relative Biomasse Cyanophyta~Cryptophyta (Gruppe 3 und Gruppe 4)")+
   theme_light()
-
-
 
 
 #Correlation for Bacil and Crypto: -0.729
 cor(relr$bacil_rel, relr$cyano_rel)
-ggplot(relr, aes(x= bacil_rel, y= cyano_rel, color= groupcol))+
-  geom_point(size= 4.7, color= relr$groupcol) +
-  xlim(0, 0.8)+
-  ylim(0, 1)+
-  labs(x= "Relative Biomasse Bacillariophyta [%]",
+#plot
+ggplot(relr, aes(bacil_rel, cyano_rel)) +
+  geom_point(aes(colour = factor(group)), size= 4)  +
+  scale_colour_manual(values = unique(relr$groupcol))  +
+  labs(color= "Gruppe",
+       x= "Relative Biomasse Bacillariophyta [%]",
        y= "Relative Biomasse Cyanophyta [%]", color= relr$group,
-       title= "Relativen Biomassen Bacillariophyta und Cyanophyta")+
-  
+       title= "Relative Biomasse Bacillariophyta~Cyanophyta")  +
   theme_light()
-
-
 
 
 
@@ -353,7 +350,6 @@ print(paste0("Kruskal-Wallis Test ", colnames(ymeans)[i],
   text(1:4, -1.1, 1:4, xpd= T, cex= 1.2)
   axis(2, c(1,10,20,27), c(1,10,20,27),las=1)
 }
-
 
 
 
